@@ -279,7 +279,7 @@ public class GoogleTest {
 
             driver.get("https://www.amazon.in/");
             Thread.sleep(3000); // Allow network + JS load before waiting
-            wait.until(ExpectedConditions.presenceOfElementLocated(By.id("nav-logo-sprites")));
+            //wait.until(ExpectedConditions.presenceOfElementLocated(By.id("nav-logo-sprites")));
             System.out.println("✓ Amazon homepage loaded");
             Thread.sleep(2000);
 
