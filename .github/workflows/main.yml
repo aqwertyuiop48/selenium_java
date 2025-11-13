@@ -40,7 +40,9 @@ jobs:
         run: mvn clean compile
 
       - name: Run Selenium Tests
-        run: mvn test
+        run: |
+         mvn test
+         mvn -Dtest=GoogleTest#testAmazonSite test
         env:
           # Set headless mode for CI
           HEADLESS: true
