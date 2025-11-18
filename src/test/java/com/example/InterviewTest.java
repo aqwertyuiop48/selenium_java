@@ -157,7 +157,7 @@ public class InterviewTest{
     public void test3() throws InterruptedException{
 
         driver.get("https://www.amazon.in/");
-        Thread.sleep(2000);
+        Thread.sleep(4000);
         driver.findElement(By.id("searchDropdownBox"));
         driver.findElement(By.xpath("//option[contains(normalize-space(),'Gift Cards')]")).click();
         if(driver.findElements(By.id("twotabsearchtextbox")).size()>0){
