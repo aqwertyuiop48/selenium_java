@@ -184,7 +184,12 @@ public class GoogleTest {
         searchBox.sendKeys("Selenium automation");
         searchBox.sendKeys(Keys.RETURN);
 
-        wait.until(ExpectedConditions.titleContains("Selenium+automation"));
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        wait.until(driver -> {
+            String title = driver.getTitle();
+            return title.contains("Selenium+automation") || title.contains("Selenium automation");
+        });
 
         String currentUrl = driver.getCurrentUrl();
         assertTrue(currentUrl.contains("search"),
