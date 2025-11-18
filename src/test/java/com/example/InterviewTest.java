@@ -53,7 +53,7 @@ public class InterviewTest{
     public void setup(){
         ChromeOptions options = new ChromeOptions();
         // Comment out headless to see the browser during tests
-        //options.addArguments("--headless");
+        options.addArguments("--headless");
         options.addArguments("--window-size=1920,1080");
         options.addArguments("--disable-blink-features=AutomationControlled");
         options.addArguments("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
