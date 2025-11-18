@@ -25,6 +25,7 @@ public class SeleniumTest {
         WebDriverManager.chromedriver().setup();
     }
 
+
     @BeforeEach
     public void setupTest() {
         ChromeOptions options = new ChromeOptions();
