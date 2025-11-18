@@ -343,4 +343,24 @@ public class AmazonTest {
             fail("Test failed: " + e.getMessage());
         }
     }
+
+    @Test
+    @Order(12)
+    @DisplayName("Third example")
+    public void test3() throws InterruptedException{
+
+        driver.get("https://www.amazon.in/");
+        Thread.sleep(4000);
+        driver.findElement(By.id("searchDropdownBox"));
+        driver.findElement(By.xpath("//option[contains(normalize-space(),'Gift Cards')]")).click();
+        if(driver.findElements(By.id("twotabsearchtextbox")).size()>0){
+            WebElement textBox = driver.findElement(By.id("twotabsearchtextbox"));
+            textBox.sendKeys("gift card voucher");
+            System.out.println("TextBox text is:" + textBox.getAttribute("value"));
+        }
+        Thread.sleep(3000);
+        driver.findElement(By.xpath("//span[normalize-space()='Congratulations']"));    
+
+
+    }
 }
