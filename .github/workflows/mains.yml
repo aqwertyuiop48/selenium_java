@@ -1,0 +1,60 @@
+name: Selenium Tests (Docker)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      selenium:
+        image: selenium/standalone-chrome:latest
+        ports:
+          - 4444:4444
+        options: >-
+          --shm-size=2gb
+          --health-cmd="curl --fail http://localhost:4444/wd/hub/status || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Wait for Selenium Grid
+      run: |
+        timeout 60 bash -c 'until curl -s http://localhost:4444/wd/hub/status | grep "ready"; do sleep 2; done'
+
+    - name: Build with Maven
+      run: mvn clean compile
+
+    - name: Run Selenium Tests
+      run: mvn -Dtest=AmazeTest test
+      env:
+        SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
+        HEADLESS: true
+
+    - name: Upload Test Reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-reports
+        path: target/surefire-reports/
+
+    - name: Upload Screenshots
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: screenshots
+        path: screenshots/
