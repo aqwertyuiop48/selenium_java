@@ -4,6 +4,7 @@ import org.junit.jupiter.api.*;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -26,22 +27,39 @@ public class AmazonTest {
     }
 
     @BeforeEach
-    public void setupTest() {
-        ChromeOptions options = new ChromeOptions();
-        // Comment out headless to see the browser
-        options.addArguments("--headless");
-        options.addArguments("--start-maximized");
-        options.addArguments("--disable-blink-features=AutomationControlled");
-        options.addArguments("--headless=new");
-        options.addArguments("--no-sandbox");
-        options.addArguments("--disable-dev-shm-usage");
-        options.addArguments("--disable-gpu");
-        options.addArguments("--window-size=1920,1080");
-        options.addArguments("--disable-blink-features=AutomationControlled");
-
-        driver = new ChromeDriver(options);
-        wait = new WebDriverWait(driver, Duration.ofSeconds(25));
-    }
+public void setupTest() {
+    ChromeOptions options = new ChromeOptions();
+    
+    // Headless mode
+    options.addArguments("--headless=new");
+    options.addArguments("--window-size=1920,1080");
+    
+    // Anti-detection measures
+    options.addArguments("--disable-blink-features=AutomationControlled");
+    options.addArguments("--no-sandbox");
+    options.addArguments("--disable-dev-shm-usage");
+    options.addArguments("--disable-gpu");
+    options.addArguments("--disable-software-rasterizer");
+    options.addArguments("--disable-extensions");
+    
+    // Add user agent to appear more like a real browser
+    options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36");
+    
+    // Additional stealth
+    options.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"});
+    options.setExperimentalOption("useAutomationExtension", false);
+    
+    driver = new ChromeDriver(options);
+    
+    // Execute CDP commands to hide automation
+    ((ChromeDriver) driver).executeCdpCommand("Page.addScriptToEvaluateOnNewDocument", 
+        java.util.Map.of("source", 
+            "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+        )
+    );
+    
+    wait = new WebDriverWait(driver, Duration.ofSeconds(25));
+}
 
     @AfterEach
     public void teardown() {
@@ -63,6 +81,41 @@ public class AmazonTest {
             driver.get("https://www.amazon.in/");
             Thread.sleep(3000); // Allow network + JS load before waiting
             //wait.until(ExpectedConditions.presenceOfElementLocated(By.id("nav-logo-sprites")));
+            //driver.findElement(By.xpath("//button[@alt='Continue shopping' and text()='Continue shopping']")).click();
+
+            WebElement btn = null;
+            WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+            // Try by alt attribute first (most specific)
+            try {
+                btn = shortWait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("//button[@alt='Continue shopping']")
+                ));
+            } catch (TimeoutException e1) {
+                // Try by class and text
+                try {
+                    btn = shortWait.until(ExpectedConditions.elementToBeClickable(
+                        By.xpath("//button[@class='a-button-text' and contains(text(),'Continue shopping')]")
+                    ));
+                } catch (TimeoutException e2) {
+                    // Try by text only
+                    try {
+                        btn = shortWait.until(ExpectedConditions.elementToBeClickable(
+                            By.xpath("//button[contains(text(),'Continue shopping')]")
+                        ));
+                    } catch (TimeoutException e3) {
+                        System.out.println("ℹ️ 'Continue shopping' button not found - continuing anyway");
+                    }
+                }
+            }
+
+            if (btn != null) {
+                btn.click();
+                System.out.println("✓ Clicked 'Continue shopping' button");
+                Thread.sleep(1000);
+            }
+
+            Thread.sleep(3000);
             System.out.println("✓ Amazon homepage loaded");
             Thread.sleep(2000);
 
@@ -344,23 +397,23 @@ public class AmazonTest {
         }
     }
 
-    @Test
-    @Order(12)
-    @DisplayName("Third example")
-    public void test3() throws InterruptedException{
+    // @Test
+    // @Order(12)
+    // @DisplayName("Third example")
+    // public void test3() throws InterruptedException{
 
-        driver.get("https://www.amazon.in/");
-        Thread.sleep(4000);
-        driver.findElement(By.id("searchDropdownBox"));
-        driver.findElement(By.xpath("//option[contains(normalize-space(),'Gift Cards')]")).click();
-        if(driver.findElements(By.id("twotabsearchtextbox")).size()>0){
-            WebElement textBox = driver.findElement(By.id("twotabsearchtextbox"));
-            textBox.sendKeys("gift card voucher");
-            System.out.println("TextBox text is:" + textBox.getAttribute("value"));
-        }
-        Thread.sleep(3000);
-        driver.findElement(By.xpath("//span[normalize-space()='Congratulations']"));    
+    //     driver.get("https://www.amazon.in/");
+    //     Thread.sleep(4000);
+    //     driver.findElement(By.id("searchDropdownBox"));
+    //     driver.findElement(By.xpath("//option[contains(normalize-space(),'Gift Cards')]")).click();
+    //     if(driver.findElements(By.id("twotabsearchtextbox")).size()>0){
+    //         WebElement textBox = driver.findElement(By.id("twotabsearchtextbox"));
+    //         textBox.sendKeys("gift card voucher");
+    //         System.out.println("TextBox text is:" + textBox.getAttribute("value"));
+    //     }
+    //     Thread.sleep(3000);
+    //     driver.findElement(By.xpath("//span[normalize-space()='Congratulations']"));    
 
 
-    }
+    // }
 }

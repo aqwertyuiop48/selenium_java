@@ -37,12 +37,13 @@ jobs:
           chromedriver --version || echo "ChromeDriver will be managed by WebDriverManager"
 
       - name: Build with Maven
-        run: mvn clean compile
+        run: |
+          mvn clean compile
+          mvn -Dtest=AmazonTest test
 
       - name: Run Selenium Tests
         run: |
-          mvn test -Dtest='!AmazonTest,!AmazeTest'    
-          # mvn test -Dtest=!AmazonTest,!InterviewTest          
+          mvn test -Dtest='!AmazonTest,!AmazeTest'              
           # mvn -Dtest=AmazonTest test
         env:
           # Set headless mode for CI
