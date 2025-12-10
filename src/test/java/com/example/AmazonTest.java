@@ -80,13 +80,8 @@ public void setupTest() {
 
             driver.get("https://www.amazon.in/");
             Thread.sleep(3000); // Allow network + JS load before waiting
-            //wait.until(ExpectedConditions.presenceOfElementLocated(By.id("nav-logo-sprites")));
-            //driver.findElement(By.xpath("//button[@alt='Continue shopping' and text()='Continue shopping']")).click();
-
             WebElement btn = null;
             WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(10));
-
-            // Try by alt attribute first (most specific)
             try {
                 btn = shortWait.until(ExpectedConditions.elementToBeClickable(
                     By.xpath("//button[@alt='Continue shopping']")
@@ -111,12 +106,12 @@ public void setupTest() {
 
             if (btn != null) {
                 btn.click();
-                System.out.println("✓ Clicked 'Continue shopping' button");
+                System.out.println(" Clicked 'Continue shopping' button");
                 Thread.sleep(1000);
             }
 
             Thread.sleep(3000);
-            System.out.println("✓ Amazon homepage loaded");
+            System.out.println(" Amazon homepage loaded");
             Thread.sleep(2000);
 
             // ========== STEP 2: Select Gift Cards from Search Dropdown ==========
@@ -137,7 +132,7 @@ public void setupTest() {
 
             assertNotEquals(initialSelection, afterSelection, "Selection should have changed");
             assertEquals("Gift Cards", afterSelection, "Should be Gift Cards");
-            System.out.println("✓ Category changed to: " + afterSelection);
+            System.out.println(" Category changed to: " + afterSelection);
             Thread.sleep(1500);
 
             // ========== STEP 3: Search for "gift card voucher" ==========
@@ -148,15 +143,15 @@ public void setupTest() {
             WebElement searchBox = driver.findElement(By.id("twotabsearchtextbox"));
             searchBox.clear();
             searchBox.sendKeys("gift card voucher");
-            System.out.println("✓ Entered search term: gift card voucher");
+            System.out.println(" Entered search term: gift card voucher");
             Thread.sleep(1000);
 
             WebElement searchButton = driver.findElement(By.id("nav-search-submit-button"));
             searchButton.click();
-            System.out.println("✓ Search submitted");
+            System.out.println(" Search submitted");
 
             wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".s-main-slot")));
-            System.out.println("✓ Search results loaded");
+            System.out.println(" Search results loaded");
             Thread.sleep(2000);
 
             // ========== STEP 4: Apply "Congratulations" Filter ==========
@@ -198,7 +193,7 @@ public void setupTest() {
                         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", congratsFilter);
                     }
 
-                    System.out.println("✓ Clicked 'Congratulations' filter");
+                    System.out.println(" Clicked 'Congratulations' filter");
                     Thread.sleep(2000);
 
                     wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".s-main-slot")));
@@ -210,7 +205,7 @@ public void setupTest() {
             }
 
             if (filterApplied) {
-                System.out.println("✓ Filter applied successfully");
+                System.out.println(" Filter applied successfully");
             }
             Thread.sleep(1500);
 
@@ -262,7 +257,7 @@ public void setupTest() {
             int productIndex = 1;
             WebElement targetProduct = products.get(productIndex);
 
-            System.out.println("\n✓ Selecting product at index " + productIndex);
+            System.out.println("\n Selecting product at index " + productIndex);
 
             ((JavascriptExecutor) driver).executeScript(
                     "arguments[0].scrollIntoView({block: 'center'});", targetProduct
@@ -295,7 +290,7 @@ public void setupTest() {
                 Thread.sleep(3000);
             }
 
-            System.out.println("✓ Clicked product at index " + productIndex);
+            System.out.println(" Clicked product at index " + productIndex);
 
             // ========== STEP 6: Wait for Page Load ==========
             System.out.println("\n" + "=".repeat(70));
@@ -311,7 +306,7 @@ public void setupTest() {
 
             String currentUrl = driver.getCurrentUrl();
             System.out.println("Current URL: " + currentUrl);
-            System.out.println("✓ Page loaded");
+            System.out.println(" Page loaded");
 
             // ========== STEP 7: Extract Title ==========
             System.out.println("\n" + "=".repeat(70));
@@ -320,11 +315,46 @@ public void setupTest() {
 
             String pageTitle = "";
             try {
-                WebElement titleElement = driver.findElement(By.id("productTitle"));
-                pageTitle = titleElement.getText().trim();
-                System.out.println("Title: " + pageTitle);
+                // Wait for element to be PRESENT (not necessarily visible)
+                WebElement titleElement = wait.until(
+                    ExpectedConditions.presenceOfElementLocated(By.id("productTitle"))
+                );
+                System.out.println(" productTitle element found in DOM");
+                
+                // Use JavaScript to get text (works even if element is not visible)
+                JavascriptExecutor js = (JavascriptExecutor) driver;
+                pageTitle = (String) js.executeScript(
+                    "return arguments[0].textContent || arguments[0].innerText;", 
+                    titleElement
+                );
+                
+                pageTitle = pageTitle.trim();
+                System.out.println(" Title: " + pageTitle);
+                
+            } catch (TimeoutException e) {
+                System.out.println("⚠️ Could not find productTitle element");
+                
+                // Fallback: try direct JavaScript query
+                try {
+                    JavascriptExecutor js = (JavascriptExecutor) driver;
+                    pageTitle = (String) js.executeScript(
+                        "var el = document.getElementById('productTitle');" +
+                        "return el ? (el.textContent || el.innerText) : '';"
+                    );
+                    pageTitle = pageTitle.trim();
+                    if (!pageTitle.isEmpty()) {
+                        System.out.println(" Title extracted via fallback JS: " + pageTitle);
+                    }
+                } catch (Exception ex) {
+                    System.out.println("⚠️ Fallback also failed");
+                }
+                
             } catch (Exception e) {
-                System.out.println("⚠️ Could not extract title");
+                System.out.println("⚠️ Error: " + e.getMessage());
+            }
+
+            if (pageTitle.isEmpty()) {
+                pageTitle = "Title not available";
             }
 
             // ========== STEP 8: Extract Price ==========
@@ -334,11 +364,20 @@ public void setupTest() {
 
             String productPrice = "";
 
-            // Just get the text directly from a-price-whole
+            // Method 1: Get all text content including hidden elements
             try {
                 WebElement priceElement = driver.findElement(By.cssSelector(".a-price-whole"));
-                productPrice = priceElement.getText();
-                System.out.println("✓ Price extracted: " + productPrice);
+                productPrice = ((JavascriptExecutor) driver).executeScript(
+                    "return arguments[0].textContent;", 
+                    priceElement
+                ).toString().trim();
+                
+                // Remove any decimal points or commas for consistency
+                productPrice = productPrice.replace(".", "").replace(",", "");
+                
+                if (!productPrice.isEmpty()) {
+                    System.out.println(" Price extracted: " + productPrice);
+                }
             } catch (Exception e) {
                 System.out.println("Method 1 failed: " + e.getMessage());
             }
@@ -348,7 +387,7 @@ public void setupTest() {
                 try {
                     WebElement priceElement = driver.findElement(By.cssSelector(".a-price .a-offscreen"));
                     productPrice = priceElement.getText();
-                    System.out.println("✓ Price from offscreen: " + productPrice);
+                    System.out.println(" Price from offscreen: " + productPrice);
                 } catch (Exception e) {
                     System.out.println("Method 2 failed: " + e.getMessage());
                 }
@@ -359,7 +398,7 @@ public void setupTest() {
                 try {
                     WebElement buttonElement = driver.findElement(By.cssSelector("button.gc-mini-picker-button"));
                     productPrice = buttonElement.getText();
-                    System.out.println("✓ Price from button: " + productPrice);
+                    System.out.println(" Price from button: " + productPrice);
                 } catch (Exception e) {
                     System.out.println("Method 3 failed: " + e.getMessage());
                 }
@@ -371,27 +410,27 @@ public void setupTest() {
             System.out.println("=".repeat(70));
 
             assertFalse(productPrice.isEmpty(), "Price should not be empty");
-            System.out.println("\n✅ FINAL PRICE: " + productPrice);
+            System.out.println("\n FINAL PRICE: " + productPrice);
 
             // ========== SUMMARY ==========
             System.out.println("\n" + "=".repeat(70));
             System.out.println("TEST SUMMARY");
             System.out.println("=".repeat(70));
-            System.out.println("✓ Step 1: Amazon homepage");
-            System.out.println("✓ Step 2: Selected Gift Cards");
-            System.out.println("✓ Step 3: Searched gift card voucher");
-            System.out.println("✓ Step 4: " + (filterApplied ? "Applied filter" : "Skipped filter"));
-            System.out.println("✓ Step 5: Clicked product at index 1 (ASIN: " + targetAsin + ")");
-            System.out.println("✓ Step 6: Page loaded");
-            System.out.println("✓ Step 7: Title: " + (pageTitle.isEmpty() ? "N/A" : pageTitle));
-            System.out.println("✓ Step 8: Price: " + productPrice);
+            System.out.println(" Step 1: Amazon homepage");
+            System.out.println(" Step 2: Selected Gift Cards");
+            System.out.println(" Step 3: Searched gift card voucher");
+            System.out.println(" Step 4: " + (filterApplied ? "Applied filter" : "Skipped filter"));
+            System.out.println(" Step 5: Clicked product at index 1 (ASIN: " + targetAsin + ")");
+            System.out.println(" Step 6: Page loaded");
+            System.out.println(" Step 7: Title: " + (pageTitle.isEmpty() ? "N/A" : pageTitle));
+            System.out.println(" Step 8: Price: " + productPrice);
             System.out.println("=".repeat(70));
-            System.out.println("\n✅ TEST PASSED\n");
+            System.out.println("\n TEST PASSED\n");
 
             Thread.sleep(2000);
 
         } catch (Exception e) {
-            System.err.println("\n❌ TEST FAILED: " + e.getMessage());
+            System.err.println("\n TEST FAILED: " + e.getMessage());
             e.printStackTrace();
             fail("Test failed: " + e.getMessage());
         }
