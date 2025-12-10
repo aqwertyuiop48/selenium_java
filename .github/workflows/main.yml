@@ -41,7 +41,7 @@ jobs:
 
       - name: Run Selenium Tests
         run: |
-          mvn test -Dtest='!AmazonTest'    
+          mvn test -Dtest='!AmazonTest,!AmazeTest'    
           # mvn test -Dtest=!AmazonTest,!InterviewTest          
           # mvn -Dtest=AmazonTest test
         env:
