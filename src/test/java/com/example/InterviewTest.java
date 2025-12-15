@@ -126,9 +126,6 @@ public class InterviewTest{
         type.sendKeys("QA automation", Keys.ENTER);
         Thread.sleep(2000);
 
-        //driver.findElement(By.cssSelector("div.FPdoLc > center > input.gNO89b")).getText().contentEquals("Google Search");
-        WebElement type1 = driver.findElement(By.name("q"));
-        type1.clear();
         Actions actions = new Actions(driver);
 
         // ctrl + A
